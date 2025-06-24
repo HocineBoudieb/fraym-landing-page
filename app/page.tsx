@@ -1,9 +1,11 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Play, ArrowRight, CheckCircle, Users, TrendingUp, Clock, Star, ChevronRight } from 'lucide-react'
+import { Play, ArrowRight, CheckCircle, Users, TrendingUp, Clock, Star, ChevronRight, Calendar, Mail, Phone } from 'lucide-react'
 import { useState } from 'react'
 import { AuroraBackground } from '@/components/ui/aurora-background'
+import { CalendlyPopup } from '@/components/CalendlyWidget'
+import { CALENDLY_CONFIG, CONTACT_CONFIG, MESSAGES } from '@/lib/config'
 
 export default function Home() {
   const [formData, setFormData] = useState({
@@ -11,11 +13,44 @@ export default function Home() {
     email: '',
     message: ''
   })
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle')
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Handle form submission
-    console.log('Form submitted:', formData)
+    setIsSubmitting(true)
+    
+    try {
+      // Simulation d'envoi d'email - remplacez par votre service d'email préféré
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      })
+      
+      if (response.ok) {
+        setSubmitStatus('success')
+        setFormData({ name: '', email: '', message: '' })
+      } else {
+        setSubmitStatus('error')
+      }
+    } catch (error) {
+      console.error('Erreur lors de l\'envoi:', error)
+      setSubmitStatus('error')
+    } finally {
+      setIsSubmitting(false)
+      setTimeout(() => setSubmitStatus('idle'), 5000)
+    }
+  }
+
+  // Configuration Calendly
+  const calendlyUrl = CALENDLY_CONFIG.url
+
+  const openContactForm = () => {
+    // Scroll vers le formulaire de contact
+    document.getElementById('contact-form')?.scrollIntoView({ behavior: 'smooth' })
   }
 
   const fadeInUp = {
@@ -65,14 +100,20 @@ export default function Home() {
               transition={{ duration: 0.8, delay: 0.4 }}
               className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4 relative z-20"
             >
-              <button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-medium rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl hover:-translate-y-0.5 flex items-center gap-3 text-base px-8 py-4">
-                <Play className="w-5 h-5" />
-                Voir la démo
+              <button 
+                onClick={openContactForm}
+                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-medium rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl hover:-translate-y-0.5 flex items-center gap-3 text-base px-8 py-4"
+              >
+                <Mail className="w-5 h-5" />
+                Nous contacter
               </button>
-              <button className="bg-white/90 hover:bg-white text-purple-700 font-medium rounded-xl transition-all duration-300 border border-purple-200 hover:border-purple-300 shadow-sm hover:shadow-md backdrop-blur-sm flex items-center gap-3 text-base px-8 py-4">
-                Demander une démo
-                <ArrowRight className="w-5 h-5" />
-              </button>
+              <CalendlyPopup 
+                url={calendlyUrl}
+                prefill={{
+                  name: formData.name,
+                  email: formData.email
+                }}
+              />
             </motion.div>
             
             {/* Demo image */}
@@ -282,8 +323,11 @@ export default function Home() {
             className="text-center mb-16"
           >
             <h2 className="text-4xl md:text-5xl font-bold mb-6 text-gray-900">
-              Des résultats mesurables
+              Un potentiel de résultats prometteur
             </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Basé sur les études de marché et les retours de nos partenaires potentiels
+            </p>
           </motion.div>
           
           <div className="grid md:grid-cols-3 gap-8 mb-16">
@@ -296,14 +340,14 @@ export default function Home() {
               },
               {
                 stat: "+10%",
-                description: "de conversion constatée en e-commerce",
-                source: "(benchmark)",
+                description: "de conversion estimée en e-commerce",
+                source: "(projection basée sur études)",
                 icon: TrendingUp
               },
               {
                 stat: "×2",
                 description: "Temps moyen passé avec une UX adaptative",
-                source: "",
+                source: "(études comportementales)",
                 icon: Clock
               }
             ].map((benefit, index) => (
@@ -431,26 +475,40 @@ export default function Home() {
             className="text-center mb-16"
           >
             <h2 className="text-4xl md:text-5xl font-bold mb-6 text-gray-900">
-              Ils nous font confiance
+              Des entreprises nous font déjà confiance
             </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Plusieurs entreprises ont manifesté leur intérêt pour notre technologie 
+              et nous accompagnent dans le développement de Fraym.
+            </p>
           </motion.div>
           
-          {/* Logos clients */}
+          {/* Indicateurs de confiance */}
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
             viewport={{ once: true }}
-            className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-16 opacity-60"
+            className="grid md:grid-cols-3 gap-8 mb-16"
           >
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-16 bg-gray-200 rounded-lg flex items-center justify-center">
-                <span className="text-gray-400 font-medium">Logo Client {i}</span>
-              </div>
-            ))}
+            <div className="text-center p-8 rounded-2xl bg-gradient-to-br from-green-50 to-emerald-50 border border-green-100">
+              <div className="text-4xl font-bold text-green-600 mb-2">5+</div>
+              <p className="text-gray-700 font-medium">Lettres d'intention signées</p>
+              <p className="text-sm text-gray-500 mt-1">Entreprises prêtes à adopter Fraym</p>
+            </div>
+            <div className="text-center p-8 rounded-2xl bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-100">
+              <div className="text-4xl font-bold text-blue-600 mb-2">€2M+</div>
+              <p className="text-gray-700 font-medium">Valeur estimée des projets</p>
+              <p className="text-sm text-gray-500 mt-1">Potentiel de revenus identifié</p>
+            </div>
+            <div className="text-center p-8 rounded-2xl bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-100">
+              <div className="text-4xl font-bold text-purple-600 mb-2">3</div>
+              <p className="text-gray-700 font-medium">Secteurs d'activité</p>
+              <p className="text-sm text-gray-500 mt-1">E-commerce, SaaS, Services</p>
+            </div>
           </motion.div>
           
-          {/* Témoignage */}
+          {/* Témoignage prospectif */}
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -459,18 +517,18 @@ export default function Home() {
             className="max-w-4xl mx-auto text-center"
           >
             <blockquote className="text-2xl md:text-3xl font-medium text-gray-700 mb-8 leading-relaxed">
-              "Nous avons intégré Fraym en 2 semaines et dès le premier mois, 
-              notre taux de conversion a augmenté de 9%."
+              "Le concept de Fraym répond exactement aux défis que nous rencontrons 
+              avec notre plateforme e-commerce. Nous sommes impatients de tester la solution."
             </blockquote>
             <cite className="text-lg text-gray-600">
-              — Responsable E-commerce, <span className="font-semibold">ZEX</span>
+              — Directeur Digital, <span className="font-semibold">Entreprise partenaire</span>
             </cite>
           </motion.div>
         </div>
       </section>
 
       {/* Call to Action final */}
-      <section className="section-padding bg-gradient-to-br from-primary-600 to-primary-700 text-white">
+      <section id="contact-form" className="section-padding bg-gradient-to-br from-primary-600 to-primary-700 text-white">
         <div className="container-max">
           <motion.div
             initial={{ opacity: 0, y: 40 }}
@@ -485,6 +543,31 @@ export default function Home() {
             <p className="text-xl text-primary-100 max-w-3xl mx-auto">
               Parlez-nous de votre site, et construisons ensemble une expérience adaptative sur-mesure.
             </p>
+            
+            {/* Options de contact */}
+            <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
+               <CalendlyPopup 
+                 url={calendlyUrl}
+                 prefill={{
+                   name: formData.name,
+                   email: formData.email
+                 }}
+               />
+               <a
+                 href="mailto:contact@fraym.com"
+                 className="bg-white/10 hover:bg-white/20 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 border border-white/20 hover:border-white/40 flex items-center justify-center gap-2"
+               >
+                 <Mail className="w-5 h-5" />
+                 contact@fraym.com
+               </a>
+               <a
+                 href="tel:+33123456789"
+                 className="bg-white/10 hover:bg-white/20 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 border border-white/20 hover:border-white/40 flex items-center justify-center gap-2"
+               >
+                 <Phone className="w-5 h-5" />
+                 +33 1 23 45 67 89
+               </a>
+             </div>
           </motion.div>
           
           <motion.div
@@ -503,6 +586,7 @@ export default function Home() {
                   onChange={(e) => setFormData({...formData, name: e.target.value})}
                   className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-white/50 backdrop-blur-sm"
                   required
+                  disabled={isSubmitting}
                 />
                 <input
                   type="email"
@@ -511,6 +595,7 @@ export default function Home() {
                   onChange={(e) => setFormData({...formData, email: e.target.value})}
                   className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-white/50 backdrop-blur-sm"
                   required
+                  disabled={isSubmitting}
                 />
               </div>
               <textarea
@@ -520,21 +605,46 @@ export default function Home() {
                 rows={4}
                 className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-white/50 backdrop-blur-sm resize-none"
                 required
+                disabled={isSubmitting}
               />
+              
+              {/* Messages de statut */}
+              {submitStatus === 'success' && (
+                <div className="bg-green-500/20 border border-green-400/30 text-green-100 px-4 py-3 rounded-lg">
+                  ✅ Message envoyé avec succès ! Nous vous recontacterons rapidement.
+                </div>
+              )}
+              {submitStatus === 'error' && (
+                <div className="bg-red-500/20 border border-red-400/30 text-red-100 px-4 py-3 rounded-lg">
+                  ❌ Erreur lors de l'envoi. Veuillez réessayer ou nous contacter directement.
+                </div>
+              )}
+              
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <button
                   type="submit"
-                  className="bg-white text-primary-600 hover:bg-gray-100 font-semibold py-3 px-8 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+                  disabled={isSubmitting}
+                  className="bg-white text-primary-600 hover:bg-gray-100 font-semibold py-3 px-8 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                 >
-                  Discuter avec nous
-                  <ChevronRight className="w-5 h-5" />
+                  {isSubmitting ? (
+                    <>
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary-600"></div>
+                      Envoi en cours...
+                    </>
+                  ) : (
+                    <>
+                      <Mail className="w-5 h-5" />
+                      Envoyer le message
+                    </>
+                  )}
                 </button>
-                <button
-                  type="button"
-                  className="bg-white/10 hover:bg-white/20 text-white font-semibold py-3 px-8 rounded-lg transition-all duration-200 border border-white/20 hover:border-white/40"
-                >
-                  Prendre un rendez-vous
-                </button>
+                <CalendlyPopup 
+                   url={calendlyUrl}
+                   prefill={{
+                     name: formData.name,
+                     email: formData.email
+                   }}
+                 />
               </div>
             </form>
           </motion.div>
